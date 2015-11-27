@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+path {
+  stroke-linejoin: round;
+}
+.circle{
+fill: #737CA1;	
+stroke:white;	
+}
+.land {
+  fill: #ddd;
+}
+
+.states {
+  stroke: #fff;
+}
+
+.voronoi {
+  fill: none;
+  stroke: black;
+  stroke-width: 0.5px;
+}
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var data=[{"16":89, "53":250, "27":4, "38":65, "23":52,"26":200,"55":50,"30":300,"41":2560, "46":187, "33":3, "50":89, "36":5,"56":180,"19":5,"31":35,"25":63,"17":140, "42":147, "9":1, "44":230, "6":350,"49":36,"32":300,"39":250,"18":36, "34":95, "8":3, "54":2, "29":41,"20":400,"10":70,"24":65,"21":5,"51":250,"11":100, "4":42, "40":10, "35":89, "47":50,"37":300,"48":256, "5":87, "45":9, "1":89, "13":42,"28":150,"22":156, "12":27, "15":8, "2":89, "72":50,"78":300}];
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.albers();
+
+var color_scale = d3.scale.quantize()
+  .domain(d3.values(data[0]))
+  .range(["#1f77b4","#8c564b","#bcbd22","#9467bd"]);
+  
+var path = d3.geo.path()
+    .projection(projection)
+    .pointRadius(function(d){return Math.floor(d[1]/14);});
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+queue()
+    .defer(d3.json, "us.json")
+    .defer(d3.tsv, "airports.tsv")
+    .await(ready);
+
+function ready(error, us, airports) {
+  svg.append("path")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+svg.append("g")
+      .attr("class", "states")
+      .selectAll("path")
+      .data(topojson.feature(us, us.objects.states).features)
+      .enter().append("path")
+      .attr("d", path)
+      .style("fill", function(d){return color_scale(data[0][d.id]);});
+           
+var legend = svg.selectAll('g.legendEntry')
+    .data(color_scale.range().reverse())
+    .enter()
+    .append('g').attr('class', 'legendEntry');
+
+legend
+    .append('rect')
+    .attr("x", width - 910)
+    .attr("y", function(d, i) {
+       return i * 20;
+    })
+   .attr("width", 10)
+   .attr("height", 10)
+   .style("stroke", "black")
+   .style("stroke-width", 1)
+   .style("fill", function(d){return d;}); 
+
+legend
+    .append('text')
+    .attr("x", width - 895) 
+    .attr("y", function(d, i) {
+       return i * 20;
+    })
+    .attr("dy", "0.8em") 
+    .text(function(d,i) {
+        var extent = color_scale.invertExtent(d);        
+        return Math.round(extent[0]) + " - " + Math.round(extent[1]);
+    });
+    
+    
+}
+</script>
+
+</body>
+
+</html>
